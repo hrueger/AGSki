@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+
+    <meta
+      name="viewport"
+      content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width"
+    />
+
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="-1" />
+	<meta http-equiv="CACHE-CONTROL" content="NO-CACHE" />
+	<link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css" />
+    
+
+	<title>Pistenführerschein Generator</title>
+	<style>
+		body {
+			background-color: #363636;
+			color: #fff;
+		}
+		.text-center {
+			padding-top: 25%;
+		}
+		#homepage button {
+			margin-top: 40px;
+		}
+	</style>
+  </head>
+  <body>
+
+	<div class="container">
+		<div class="row" id="homepage">
+			<div class="col text-center">
+				<button class="btn btn-success" onClick="navToFront()">Vorderseite generieren (statisch)</button>
+				<br><br>
+				<button class="btn btn-primary" onClick="navToBack()">Rückseite generieren (dynamisch)</button>
+			</div>
+		</div>
+		<div class="row" id="front">
+			<div class="col text-center" id="frontLoading">
+				<h4>Generieren der Vorderseite</h4>
+				<h6>Bitte warten...</h6>
+			</div>
+			
+			<div class="col text-center" id="frontDone">
+					<h4>Generieren der Vorderseite abgeschlossen</h4>
+					<button class="btn btn-primary" onClick="navToHome()">Zurück</button>
+				</div>
+		</div>
+		<div class="row" id="back">
+			<div class="col text-center">
+				<h4>Back</h4>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		var $ = jQuery = require('jquery');
+
+		const customTitlebar = require('custom-electron-titlebar');
+		new customTitlebar.Titlebar({
+			backgroundColor: customTitlebar.Color.fromHex('#444')
+		});
+
+		$("#front").hide();
+		$("#back").hide();
+
+		function navToFront() {
+			$("#homepage").hide();
+			$("#front").show();
+			$("#back").hide();
+			$("#frontLoading").show();
+			$("#frontDone").hide();
+
+			const PDFDocument = require('pdfkit');
+			const fs = require("fs");
+
+			doc = new PDFDocument({
+				height: 297,
+				width: 210 
+			});
+			const path = 'output'+Math.floor(Math.random() * Math.floor(5000))+'.pdf';
+			const ws = fs.createWriteStream(path)
+			doc.pipe(ws);
+			ws.on("finish", () => {
+				const shell = require('electron').shell;
+				shell.openItem(path);
+				$("#frontLoading").hide();
+				$("#frontDone").show();
+			})
+
+			var img = doc.openImage('assets/front.png');
+			var width = doc.page.width;
+			var height = doc.page.height/4;
+			for(var i=0; i<4; i++) {
+				doc.image(img, 0, i*height, { width: width, height: height});
+			}
+			doc.end();
+
+
+		}
+		function navToBack() {
+			$("#homepage").hide();
+			$("#back").show();
+			$("#front").hide();
+			$("#backLoading").show();
+			$("#backDone").hide();
+
+			const dialog = require('electron').remote.dialog;
+
+			const file = dialog.showOpenDialog({
+				filters:  [
+					{ name: 'CSV', extensions: ["csv"] },
+				],
+				title: "Schülerliste auswählen",
+				buttonLabel: "Laden",
+				properties: [
+					"openFile"
+				]
+			});
+			console.log(file);
+		}
+		function navToHome() {
+			$("#homepage").show();
+			$("#front").hide();
+			$("#back").hide();
+		}
+
+
+		
+	</script>
+  </body>
+</html>
