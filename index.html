@@ -48,19 +48,28 @@
 			</div>
 			
 			<div class="col text-center" id="frontDone">
-					<h4>Generieren der Vorderseite abgeschlossen</h4>
-					<button class="btn btn-primary" onClick="navToHome()">Zurück</button>
-				</div>
+				<h4>Generieren der Vorderseite abgeschlossen</h4>
+				<button class="btn btn-primary" onClick="navToHome()">Zurück</button>
+			</div>
 		</div>
+
 		<div class="row" id="back">
-			<div class="col text-center">
-				<h4>Back</h4>
+			<div class="col text-center" id="backLoading">
+				<h4>Generieren der Rückseite</h4>
+				<h6>Bitte warten...</h6>
+				<h6>Status: <span id="status">Vorbereiten</span></h6>
+			</div>
+			
+			<div class="col text-center" id="backDone">
+				<h4>Generieren der Rückseite abgeschlossen</h4>
+				<button class="btn btn-primary" onClick="navToHome()">Zurück</button>
 			</div>
 		</div>
 	</div>
 
 	<script>
 		var $ = jQuery = require('jquery');
+
 
 		const customTitlebar = require('custom-electron-titlebar');
 		new customTitlebar.Titlebar({
@@ -104,6 +113,7 @@
 
 
 		}
+		
 		function navToBack() {
 			$("#homepage").hide();
 			$("#back").show();
@@ -113,7 +123,13 @@
 
 			const dialog = require('electron').remote.dialog;
 
-			const file = dialog.showOpenDialog({
+			dialog.showMessageBox({
+				type: "info",
+				title: "CSV Datei importieren",
+				message: "Die CSV Datei muss aus folgenden Spalten in dieser Reihenfolge bestehen:\n\nNachname, Vorname, Klasse, Geburtsdatum",
+			});
+			$("#status").text("Schülerdatendatei laden");
+			let file = dialog.showOpenDialog({
 				filters:  [
 					{ name: 'CSV', extensions: ["csv"] },
 				],
@@ -123,7 +139,69 @@
 					"openFile"
 				]
 			});
-			console.log(file);
+			if (file && file[0]) {
+				$("#status").text("Schülerdatendatei verarbeiten");
+				file = file[0];
+				var fs = require('fs');
+
+				var chardet = require('chardet');
+				const charset = chardet.detectFileSync(file);
+
+				var csvStr = fs.readFileSync(file, {encoding: "binary"});
+				const iconv = require('iconv-lite');
+				csvStr = iconv.decode(csvStr, charset);
+
+				console.log(csvStr);
+				var csv = require('csvtojson');
+				csv({
+					noheader:true,
+					delimiter: [","],
+				})
+				.fromString(csvStr)
+				.then(function(pupils){
+					$("#status").text("Bilderordner öffnen");
+					let folder = dialog.showOpenDialog({
+						title: "Bilderordner auswählen",
+						buttonLabel: "Öffnen",
+						properties: [
+							"openDirectory"
+						]
+					});
+					if (folder && folder[0]) {
+						$("#status").text("Überprüfen der Bilder");
+						folder = folder[0];
+						const fs = require("fs");
+						const path = require("path");
+						const existingPupils = [];
+						const nonExistingPupils = [];
+
+						pupils.forEach(pupil => {
+							if (fs.existsSync(path.join(folder, `${pupil.field1}_${pupil.field2}.png`))) {
+								existingPupils.push(pupil);
+							} else {
+								nonExistingPupils.push(pupil);
+							}
+						});
+
+						if (existingPupils.length == pupils.length && !nonExistingPupils.length) {
+							$("#status").text("PDF generieren");
+							generateBackPDF(pupils, folder);
+						} else {
+							let message = "Folgende Bilddateien wurden nicht gefunden:\n\n";
+							nonExistingPupils.forEach(pupil => {
+								message += `${pupil.field1}_${pupil.field2}.png\n`;
+							});
+							$("#status").text("Abbruch wegen fehlender Bilddateien");
+							dialog.showMessageBox({
+								type: "info",
+								title: "Dateien fehlen",
+								message: message,
+							})
+						}
+					}
+				})
+
+			}
 		}
 		function navToHome() {
 			$("#homepage").show();
@@ -131,6 +209,57 @@
 			$("#back").hide();
 		}
 
+		function generateBackPDF(pupils, folder) {
+			const PDFDocument = require('pdfkit');
+			const fs = require("fs");
+
+			doc = new PDFDocument({
+				height: 297,
+				width: 210 
+			});
+			const path = 'back_'+Math.floor(Math.random() * Math.floor(5000))+'.pdf';
+			const ws = fs.createWriteStream(path)
+			doc.pipe(ws);
+			ws.on("finish", () => {
+				const shell = require('electron').shell;
+				shell.openItem(path);
+				$("#backLoading").hide();
+				$("#backDone").show();
+			})
+
+			var img = doc.openImage('assets/back.png');
+			doc.fontSize(18);
+			var width = doc.page.width;
+			var height = doc.page.height/4;
+
+			var perPageCounter = 0;
+
+
+			const nameX = 130;
+			const nameY = 50;
+
+			const gradeX = nameX;
+			const gradeY = 80;
+			
+			const birthX = nameX;
+			const birthY = 110;
+
+
+			pupils.forEach((pupil, index) => {
+				if (perPageCounter == 3) {
+					doc.addPage();
+				}
+				doc.image(img, 0, perPageCounter*height, { width: width, height: height});
+				doc.text(pupil.field2+" "+pupil.field1, nameX, nameY+(perPageCounter*height));
+				doc.text(pupil.field3, birthX, birthY+(perPageCounter*height));
+				doc.text(pupil.field4, gradeX, gradeY+(perPageCounter*height));
+
+				perPageCounter++;
+
+			});
+			$("#status").text("Datei speichern");
+			doc.end();
+		}
 
 		
 	</script>

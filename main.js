@@ -1,7 +1,8 @@
 const {
 	Menu,
 	app,
-	BrowserWindow
+	BrowserWindow,
+	globalShortcut
 } = require('electron')
 
 let mainWindow
@@ -28,6 +29,18 @@ const createWindow = () => {
 	mainWindow.webContents.toggleDevTools();
 
 	createMenu();
+	globalShortcut.register('f5', function() {
+		console.log('f5 is pressed')
+		mainWindow.reload()
+	})
+	globalShortcut.register('CommandOrControl+R', function() {
+		console.log('CommandOrControl+R is pressed')
+		mainWindow.reload()
+	})
+	globalShortcut.register('CommandOrControl+Shift+I', function() {
+		console.log('CommandOrControl++Shift+I is pressed')
+		mainWindow.webContents.toggleDevTools()
+	})
 	
 	// Emitted when the window is closed.
 	mainWindow.on('closed', () => {
