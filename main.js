@@ -3,7 +3,7 @@ const {
 	app,
 	BrowserWindow,
 	globalShortcut
-} = require('electron')
+} = require('electron');
 
 let mainWindow
 
@@ -16,7 +16,7 @@ const createWindow = () => {
 		width: 800,
 		height: 600,
 		frame: false,
-		icon: __dirname + '/assets/aglogo.png',
+		icon: __dirname + '/assets/logo.ico',
 		webperferences: {
 			nodeIntegration: true,
 			nodeIntegrationInWorker: true
@@ -26,14 +26,10 @@ const createWindow = () => {
 
 	// and load the index.html of the app.
 	mainWindow.loadURL(`file://${__dirname}/index.html`);
-	mainWindow.webContents.toggleDevTools();
+	//mainWindow.webContents.toggleDevTools();
 
 	createMenu();
-	globalShortcut.register('f5', function() {
-		console.log('f5 is pressed')
-		mainWindow.reload()
-	})
-	globalShortcut.register('CommandOrControl+R', function() {
+	globalShortcut.register('CommandOrControl+Shift+R', function() {
 		console.log('CommandOrControl+R is pressed')
 		mainWindow.reload()
 	})

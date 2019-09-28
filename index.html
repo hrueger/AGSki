@@ -58,6 +58,7 @@
 				<h4>Generieren der Rückseite</h4>
 				<h6>Bitte warten...</h6>
 				<h6>Status: <span id="status">Vorbereiten</span></h6>
+				<button id="backButton" class="btn btn-primary" onClick="navToHome()">Zurück</button>
 			</div>
 			
 			<div class="col text-center" id="backDone">
@@ -93,11 +94,14 @@
 				height: 297,
 				width: 210 
 			});
-			const path = 'output'+Math.floor(Math.random() * Math.floor(5000))+'.pdf';
+			const remote = require('electron').remote, app = remote.app;
+			app.getPath('documents')
+			const path = require("path").join(app.getPath('documents'), 'pistenfuehrerschein_front_'+Date.now()+'.pdf');
 			const ws = fs.createWriteStream(path)
 			doc.pipe(ws);
 			ws.on("finish", () => {
 				const shell = require('electron').shell;
+				shell.showItemInFolder(path);
 				shell.openItem(path);
 				$("#frontLoading").hide();
 				$("#frontDone").show();
@@ -120,93 +124,145 @@
 			$("#front").hide();
 			$("#backLoading").show();
 			$("#backDone").hide();
+			$("#backButton").hide();
 
-			const dialog = require('electron').remote.dialog;
-
-			dialog.showMessageBox({
-				type: "info",
-				title: "CSV Datei importieren",
-				message: "Die CSV Datei muss aus folgenden Spalten in dieser Reihenfolge bestehen:\n\nNachname, Vorname, Klasse, Geburtsdatum",
-			});
-			$("#status").text("Schülerdatendatei laden");
-			let file = dialog.showOpenDialog({
-				filters:  [
-					{ name: 'CSV', extensions: ["csv"] },
-				],
-				title: "Schülerliste auswählen",
-				buttonLabel: "Laden",
-				properties: [
-					"openFile"
-				]
-			});
-			if (file && file[0]) {
-				$("#status").text("Schülerdatendatei verarbeiten");
-				file = file[0];
-				var fs = require('fs');
-
-				var chardet = require('chardet');
-				const charset = chardet.detectFileSync(file);
-
-				var csvStr = fs.readFileSync(file, {encoding: "binary"});
-				const iconv = require('iconv-lite');
-				csvStr = iconv.decode(csvStr, charset);
-
-				console.log(csvStr);
-				var csv = require('csvtojson');
-				csv({
-					noheader:true,
-					delimiter: [","],
-				})
-				.fromString(csvStr)
-				.then(function(pupils){
-					dialog.showMessageBox({
-						type: "info",
-						title: "Bilderordner öffnen",
-						message: "Alle Bilder müssen nach folgendem Fomat benannt sein:\n\nNachname_Vorname.png",
-					});
-					$("#status").text("Bilderordner öffnen");
-					let folder = dialog.showOpenDialog({
-						title: "Bilderordner auswählen",
-						buttonLabel: "Öffnen",
-						properties: [
-							"openDirectory"
-						]
-					});
-					if (folder && folder[0]) {
-						$("#status").text("Überprüfen der Bilder");
-						folder = folder[0];
-						const fs = require("fs");
-						const path = require("path");
-						const existingPupils = [];
-						const nonExistingPupils = [];
-
-						pupils.forEach(pupil => {
-							if (fs.existsSync(path.join(folder, `${pupil.field1}_${pupil.field2}.png`))) {
-								existingPupils.push(pupil);
-							} else {
-								nonExistingPupils.push(pupil);
-							}
-						});
-
-						if (existingPupils.length == pupils.length && !nonExistingPupils.length) {
-							$("#status").text("PDF generieren");
-							generateBackPDF(pupils, folder);
+			const prompt = require('electron-prompt');
+			const { remote, BrowserWindow } = require('electron')
+			const currentWindow = remote.getCurrentWindow();
+			prompt({
+				icon: __dirname + '/assets/logo.ico',
+				title: 'Ort und Datum eingeben',
+				label: 'Text',
+				value: 'Montafon, den 01.01.1970, ',
+				inputAttrs: {
+					type: 'text',
+					required: true,
+				}
+			}, currentWindow)
+			.then((r) => {
+				if(r === null) {
+					navToHome();
+				} else {
+					locationAndDateText = r;
+					prompt({
+						icon: __dirname + '/assets/logo.ico',
+						title: 'Dateityp auswählen',
+						label: 'Typ',
+						value: 'PNG',
+						type: "select",
+						inputAttrs: {
+							required: true,
+						},
+						selectOptions: {
+							"png": "PNG",
+							"jpg": "JPG",
+							"jpeg": "JPEG"
+						}
+					}, currentWindow)
+					.then((r) => {
+						if(r === null) {
+							navToHome();
 						} else {
-							let message = "Folgende Bilddateien wurden nicht gefunden:\n\n";
-							nonExistingPupils.forEach(pupil => {
-								message += `${pupil.field1}_${pupil.field2}.png\n`;
-							});
-							$("#status").text("Abbruch wegen fehlender Bilddateien");
+							fileExtension = r;
+							console.log(fileExtension);
+							const dialog = require('electron').remote.dialog;
+
 							dialog.showMessageBox({
 								type: "info",
-								title: "Dateien fehlen",
-								message: message,
-							})
-						}
-					}
-				})
+								icon: __dirname + '/assets/logo.ico',
+								title: "CSV Datei importieren",
+								message: "Die CSV Datei muss aus folgenden Spalten in dieser Reihenfolge bestehen:\n\nNachname, Vorname, Klasse, Geburtsdatum",
+							});
+							$("#status").text("Schülerdatendatei laden");
+							let file = dialog.showOpenDialog({
+								icon: __dirname + '/assets/logo.ico',
+								filters:  [
+									{ name: 'CSV', extensions: ["csv"] },
+								],
+								title: "Schülerliste auswählen",
+								buttonLabel: "Laden",
+								properties: [
+									"openFile"
+								]
+							});
+							if (file && file[0]) {
+								$("#status").text("Schülerdatendatei verarbeiten");
+								file = file[0];
+								var fs = require('fs');
 
-			}
+								var chardet = require('chardet');
+								const charset = chardet.detectFileSync(file);
+
+								var csvStr = fs.readFileSync(file, {encoding: "binary"});
+								const iconv = require('iconv-lite');
+								csvStr = iconv.decode(csvStr, charset);
+
+								console.log(csvStr);
+								var csv = require('csvtojson');
+								csv({
+									noheader:true,
+									delimiter: [","],
+								})
+								.fromString(csvStr)
+								.then(function(pupils){
+									dialog.showMessageBox({				
+										icon: __dirname + '/assets/logo.ico',
+										type: "info",
+										title: "Bilderordner öffnen",
+										message: "Alle Bilder müssen nach folgendem Fomat benannt sein:\n\nNachname_Vorname.png",
+									});
+									$("#status").text("Bilderordner öffnen");
+									let folder = dialog.showOpenDialog({
+										icon: __dirname + '/assets/logo.ico',
+										title: "Bilderordner auswählen",
+										buttonLabel: "Öffnen",
+										properties: [
+											"openDirectory"
+										]
+									});
+									if (folder && folder[0]) {
+										$("#status").text("Überprüfen der Bilder");
+										folder = folder[0];
+										const fs = require("fs");
+										const path = require("path");
+										const existingPupils = [];
+										const nonExistingPupils = [];
+
+										pupils.forEach(pupil => {
+											if (fs.existsSync(path.join(folder, `${pupil.field1}_${pupil.field2}.${fileExtension}`))) {
+												existingPupils.push(pupil);
+											} else {
+												nonExistingPupils.push(pupil);
+											}
+										});
+
+										if (existingPupils.length == pupils.length && !nonExistingPupils.length) {
+											$("#status").text("PDF generieren");
+											generateBackPDF(pupils, folder, fileExtension, locationAndDateText);
+										} else {
+											let message = "Folgende Bilddateien wurden nicht gefunden:\n\n";
+											nonExistingPupils.forEach(pupil => {
+												message += `${pupil.field1}_${pupil.field2}.${fileExtension}\n`;
+											});
+											$("#status").text("Abbruch wegen fehlender Bilddateien");
+											$("#backButton").show();
+											dialog.showMessageBox({
+												icon: __dirname + '/assets/logo.ico',
+												type: "info",
+												title: "Dateien fehlen",
+												message: message,
+											})
+										}
+									}
+								})
+							}
+						}
+					})
+				}
+			})
+
+
+			
 		}
 		function navToHome() {
 			$("#homepage").show();
@@ -214,7 +270,7 @@
 			$("#back").hide();
 		}
 
-		function generateBackPDF(pupils, folder) {
+		function generateBackPDF(pupils, folder, fileExtension, locationAndDateText) {
 			const PDFDocument = require('pdfkit');
 			const fs = require("fs");
 			const path = require("path");
@@ -224,11 +280,15 @@
 				width: 210,
 				margin: 0,
 			});
-			const outputPath = 'back_'+Math.floor(Math.random() * Math.floor(5000))+'.pdf';
+			const remote = require('electron').remote, app = remote.app;
+			app.getPath('documents')
+			const outputPath = require("path").join(app.getPath('documents'), 'pistenfuehrerschein_front_'+Date.now()+'.pdf');
 			const ws = fs.createWriteStream(outputPath)
 			doc.pipe(ws);
 			ws.on("finish", () => {
+				
 				const shell = require('electron').shell;
+				shell.showItemInFolder(outputPath);
 				shell.openItem(outputPath);
 				$("#backLoading").hide();
 				$("#backDone").show();
@@ -251,6 +311,9 @@
 			const gradeX = nameX;
 			const gradeY = 110;
 
+			const locationAndDateTextX = 326;
+			const locationAndDateTextY = 140;
+
 			const imgX = 8;
 			const imgY = 10;
 			const imgFitX = 105;
@@ -262,11 +325,14 @@
 					doc.addPage();
 					perPageCounter = 0;
 				}
+				doc.fontSize(18);
 				doc.image(img, 0, perPageCounter*height, { width: width, height: height});
 				doc.text(pupil.field2+" "+pupil.field1, nameX, nameY+(perPageCounter*height));
 				doc.text(pupil.field4, birthX, birthY+(perPageCounter*height));
 				doc.text(pupil.field3, gradeX, gradeY+(perPageCounter*height));
-				doc.image(path.join(folder, `${pupil.field1}_${pupil.field2}.png`), imgX, imgY+(perPageCounter*height), {fit: [imgFitX, imgFitY]})
+				doc.fontSize(12);
+				doc.text(locationAndDateText, locationAndDateTextX, locationAndDateTextY+(perPageCounter*height));
+				doc.image(path.join(folder, `${pupil.field1}_${pupil.field2}.${fileExtension}`), imgX, imgY+(perPageCounter*height), {fit: [imgFitX, imgFitY]})
 
 				perPageCounter++;
 
