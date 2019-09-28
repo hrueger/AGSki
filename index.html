@@ -159,6 +159,11 @@
 				})
 				.fromString(csvStr)
 				.then(function(pupils){
+					dialog.showMessageBox({
+						type: "info",
+						title: "Bilderordner öffnen",
+						message: "Alle Bilder müssen nach folgendem Fomat benannt sein:\n\nNachname_Vorname.png",
+					});
 					$("#status").text("Bilderordner öffnen");
 					let folder = dialog.showOpenDialog({
 						title: "Bilderordner auswählen",
@@ -212,17 +217,19 @@
 		function generateBackPDF(pupils, folder) {
 			const PDFDocument = require('pdfkit');
 			const fs = require("fs");
+			const path = require("path");
 
 			doc = new PDFDocument({
 				height: 297,
-				width: 210 
+				width: 210,
+				margin: 0,
 			});
-			const path = 'back_'+Math.floor(Math.random() * Math.floor(5000))+'.pdf';
-			const ws = fs.createWriteStream(path)
+			const outputPath = 'back_'+Math.floor(Math.random() * Math.floor(5000))+'.pdf';
+			const ws = fs.createWriteStream(outputPath)
 			doc.pipe(ws);
 			ws.on("finish", () => {
 				const shell = require('electron').shell;
-				shell.openItem(path);
+				shell.openItem(outputPath);
 				$("#backLoading").hide();
 				$("#backDone").show();
 			})
@@ -235,24 +242,31 @@
 			var perPageCounter = 0;
 
 
-			const nameX = 130;
+			const nameX = 125;
 			const nameY = 50;
-
-			const gradeX = nameX;
-			const gradeY = 80;
 			
 			const birthX = nameX;
-			const birthY = 110;
+			const birthY = 80;
+
+			const gradeX = nameX;
+			const gradeY = 110;
+
+			const imgX = 8;
+			const imgY = 10;
+			const imgFitX = 105;
+			const imgFitY = 135;
 
 
 			pupils.forEach((pupil, index) => {
-				if (perPageCounter == 3) {
+				if (perPageCounter == 4) {
 					doc.addPage();
+					perPageCounter = 0;
 				}
 				doc.image(img, 0, perPageCounter*height, { width: width, height: height});
 				doc.text(pupil.field2+" "+pupil.field1, nameX, nameY+(perPageCounter*height));
-				doc.text(pupil.field3, birthX, birthY+(perPageCounter*height));
-				doc.text(pupil.field4, gradeX, gradeY+(perPageCounter*height));
+				doc.text(pupil.field4, birthX, birthY+(perPageCounter*height));
+				doc.text(pupil.field3, gradeX, gradeY+(perPageCounter*height));
+				doc.image(path.join(folder, `${pupil.field1}_${pupil.field2}.png`), imgX, imgY+(perPageCounter*height), {fit: [imgFitX, imgFitY]})
 
 				perPageCounter++;
 
