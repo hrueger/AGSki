@@ -1,14 +1,24 @@
 {
     "name": "pistenfuehrerschein-generator",
     "version": "0.0.1",
+    "description": "Generator für den AG Pistenführerschein",
     "main": "main.js",
     "productName": "Pistenführerschein Generator",
     "scripts": {
-        "start": "electron ."
+        "start": "electron .",
+        "dist": "electron-builder"
     },
+    "build": {
+        "appId": "hrueger.pistenfuehrerscheingenerator",
+        "mac": {
+          "category": "hrueger.pistenfuehrerscheingenerator"
+        }
+      },
     "author": "Hannes Rüger",
+    "postinstall": "electron-builder install-app-deps",
     "devDependencies": {
         "electron": "*",
+        "electron-builder": "^21.2.0",
         "electron-settings": "*"
     },
     "dependencies": {
