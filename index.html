@@ -169,7 +169,6 @@
 
 							dialog.showMessageBox({
 								type: "info",
-								icon: __dirname + '/assets/logo.ico',
 								title: "CSV Datei importieren",
 								message: "Die CSV Datei muss aus folgenden Spalten in dieser Reihenfolge bestehen:\n\nNachname, Vorname, Klasse, Geburtsdatum",
 							});
@@ -205,8 +204,7 @@
 								})
 								.fromString(csvStr)
 								.then(function(pupils){
-									dialog.showMessageBox({				
-										icon: __dirname + '/assets/logo.ico',
+									dialog.showMessageBox({
 										type: "info",
 										title: "Bilderordner öffnen",
 										message: "Alle Bilder müssen nach folgendem Fomat benannt sein:\n\nNachname_Vorname.png",
@@ -247,7 +245,6 @@
 											$("#status").text("Abbruch wegen fehlender Bilddateien");
 											$("#backButton").show();
 											dialog.showMessageBox({
-												icon: __dirname + '/assets/logo.ico',
 												type: "info",
 												title: "Dateien fehlen",
 												message: message,
@@ -282,7 +279,7 @@
 			});
 			const remote = require('electron').remote, app = remote.app;
 			app.getPath('documents')
-			const outputPath = require("path").join(app.getPath('documents'), 'pistenfuehrerschein_front_'+Date.now()+'.pdf');
+			const outputPath = require("path").join(app.getPath('documents'), 'pistenfuehrerschein_back_'+Date.now()+'.pdf');
 			const ws = fs.createWriteStream(outputPath)
 			doc.pipe(ws);
 			ws.on("finish", () => {
