@@ -1,6 +1,6 @@
 {
     "name": "pistenfuehrerschein-generator",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Generator für den AG Pistenführerschein",
     "main": "main.js",
     "productName": "Pistenführerschein Generator",
