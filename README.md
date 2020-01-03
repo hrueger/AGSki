@@ -1,3 +1,9 @@
-## AGM-Tools Desktop Client
+# AGSki
+###### ein Pistenführerscheingenerator.
 
-TODO
+## Features:
+- Einheitliche Rückseite
+- Dynamische Vorderseite mit Namen, Bildern und Geburtsdaten aus einer CSV Datei.
+
+## License
+MIT
