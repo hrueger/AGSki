@@ -1,23 +1,26 @@
 {
-    "name": "pistenfuehrerschein-generator",
-    "version": "0.0.3",
+    "name": "agski",
+    "version": "0.1.0",
     "description": "Generator für den AG Pistenführerschein",
     "main": "main.js",
-    "productName": "Pistenführerschein Generator",
+    "productName": "AGSki",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/hrueger/AGSki"
+    },
     "scripts": {
         "start": "electron .",
         "dist": "electron-builder"
     },
     "build": {
-        "appId": "hrueger.pistenfuehrerscheingenerator",
+        "appId": "hrueger.agsuite.agski",
         "mac": {
-          "category": "hrueger.pistenfuehrerscheingenerator"
+            "category": "hrueger.agsuite.agski"
         },
-        
         "extraFiles": [
             "assets"
         ]
-      },
+    },
     "author": "Hannes Rüger",
     "postinstall": "electron-builder install-app-deps",
     "devDependencies": {
