@@ -7,3 +7,5 @@
 
 ## License
 MIT
+
+Logo created by Leo Fruijtier.
