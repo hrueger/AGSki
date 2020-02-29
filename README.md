@@ -1,4 +1,7 @@
 # AGSki
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/hrueger/AGSki.svg)](https://greenkeeper.io/)
+
 ###### ein Pistenführerscheingenerator.
 
 ## Features:
