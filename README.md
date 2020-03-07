@@ -1,6 +1,6 @@
 # AGSki
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/hrueger/AGSki.svg)](https://greenkeeper.io/)
+[![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=hrueger/AGSki)](https://dependabot.com)
 
 ###### ein Pistenführerscheingenerator.
 
