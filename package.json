@@ -24,7 +24,7 @@
     "author": "Hannes Rüger",
     "postinstall": "electron-builder install-app-deps",
     "devDependencies": {
-        "electron": "*",
+        "electron": "8.2.1",
         "electron-builder": "^22.4.1",
         "electron-settings": "*"
     },
